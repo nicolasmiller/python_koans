@@ -18,16 +18,40 @@
 
 from runner.koan import *
 
-
 class Proxy(object):
     def __init__(self, target_object):
-        # WRITE CODE HERE
-        
-        #initialize '_obj' attribute last. Trust me on this!
-        self._obj = target_object
+        object.__setattr__(self, '_messages', [])
+        object.__setattr__(self, '_obj', target_object) 
 
-    # WRITE CODE HERE
+    def __setattr__(self, attr, value):
+	object.__getattribute__(self, '_messages').append(attr + "=")
+        object.__getattribute__(self, '_obj').__setattr__(attr, value)
 
+    def __getattribute__(self, attr):
+	if attr == 'messages':
+		return object.__getattribute__(self, 'messages')
+	if attr == 'was_called':
+		return object.__getattribute__(self, 'was_called')
+	if attr == 'number_of_times_called':
+		return object.__getattribute__(self, 'number_of_times_called')
+
+	object.__getattribute__(self, '_messages').append(attr)
+	result = object.__getattribute__(self, '_obj').__getattribute__(attr)
+        if 'instancemethod' == type(result).__name__:
+		return result.__call__
+	else:
+        	return result 
+
+    def messages(self):
+        return object.__getattribute__(self, '_messages')
+
+    def was_called(self, attr):
+        filtered_messages = filter(lambda attr: attr[:-1] if attr[-1] == '=' else attr, object.__getattribute__(self, '_messages')) 
+	return attr in filtered_messages
+
+    def number_of_times_called(self, attr):
+	filtered_messages = filter(lambda elem: attr == elem, object.__getattribute__(self, '_messages')) 
+	return len(filtered_messages)
 
 # The proxy object should pass the following Koan:
 #
